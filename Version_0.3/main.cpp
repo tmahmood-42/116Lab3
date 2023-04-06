@@ -3,348 +3,159 @@
 #include <sstream>
 #include <string>
 #include <iomanip>
+#include <chrono>
 #include "country.h"
+#include "datasetsort.h"
+
+Country* readCountryDataFromFile(const std::string& fileName, int& numLines); 
 
 int main() 
 {
-  // Read in File to count the number of lines
-  std::ifstream countFile("data2.csv");
-  std::string countLine;
-  int numLines = 0;
-  while (std::getline(countFile, countLine)) 
-  {
-    numLines++;
-  }
-  countFile.close();
+  int numLines= 0;
+  Country* data = readCountryDataFromFile("data2.csv", numLines);
 
-  // Dynamically allocate memory for the array
-  Country* data = new Country[numLines];
-
-  // Declare Variables to hold in data
-  std::string countryName;
-  double epi2020, epi2022, epi10yr;
-  // Declare variable to keep track of count in while loop
-  int j = 0;
-
-  // Read in File
-  std::ifstream file("data2.csv");
-  std::string line;
-  // Reads and discard the first line as it is not needed
-  std::getline(file, line);
-
-  while (std::getline(file, line) && j < numLines)
-  {
-    std::stringstream ss(line);
-    std::string field;
-    data[j] = Country("N/A", epi2022, epi10yr, epi2020);
-    for (int i = 1; i <= 20; i++) 
-    {
-      //Checks Which number of values have been read in
-      std::getline(ss, field, ',');
-      if (field.empty()) 
-      {
-        field = "0";
-      }
-      if(i == 5)
-      {
-        std::string name = field;
-        data[j].setCountryName(name);
-        //std::cout << "the Country name is : " << data[j].getCountryName() << std::endl;
-      }
-      else if(i == 15)
-      {
-        double newValue;
-        std::istringstream iss(field);
-        iss >> newValue;
-        data[j].setEpi2022(newValue);
-      }
-      else if(i == 16)
-      {
-        double newValue;
-        std::istringstream iss(field);
-        iss >> newValue;
-        data[j].setEpi2020(newValue);
-      }
-      else if(i == 17)
-      {
-        double newValue;
-        std::istringstream iss(field);
-        iss >> newValue;
-        data[j].setEpi10year(newValue);
-      }
-    }
-    //std::cout << data[j].getCountryName() << std::endl;
-    j++;
-  }
-
-  file.close();
-
-  for(int i = 0; i < numLines;i++)
+  /*for(int i = 0; i < numLines;i++)
   {
     std::cout << data[i].getCountryName() << " " << data[i].getEpi2022() << " ";
     std::cout << data[i].getEpi2022() << " " << data[i].getEpi10yr() << std::endl;
-  }
+  }*/
+  
+  /*
+    Sorting Portion
+  */
 
-  // Free dynamically allocated memory
+  int sortChoice;
+    std::cout << "Which sorting algorithm do you want to use?" << std::endl;
+    std::cout << "1. Selection sort" << std::endl;
+    std::cout << "2. Merge sort" << std::endl;
+    std::cin >> sortChoice;
+
+    int criteriaChoice;
+    std::cout << "Which criteria do you want to sort the data by?" << std::endl;
+    std::cout << "1. Country Name" << std::endl;
+    std::cout << "2. EPI 2020" << std::endl;
+    std::cout << "3. EPI 2022" << std::endl;
+    std::cout << "4. EPI 10-year change" << std::endl;
+    std::cin >> criteriaChoice;
+
+    DataSetSort dataSet(data, numLines);
+
+    // Start timing
+    auto start = std::chrono::high_resolution_clock::now();
+  
+    // Sort the data using the chosen algorithm and criteria
+    if (sortChoice == 1)
+    {
+        dataSet.selectionSort(criteriaChoice);
+    }
+    else if (sortChoice == 2)
+    {
+        dataSet.mergeSort(criteriaChoice);
+    }
+
+    // End timing
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "Sorting took " << duration.count() << " ms" << std::endl;
+
+    int outputChoice;
+    std::cout << "Where do you want to output the results?" << std::endl;
+    std::cout << "1. Top 10" << std::endl;
+    std::cout << "2. Middle 10" << std::endl;
+    std::cout << "3. Bottom 10" << std::endl;
+    std::cin >> outputChoice;
+
+    int startIdx, endIdx;
+    if (outputChoice == 1)
+    {
+        startIdx = 0;
+        endIdx = 10;
+    }
+    else if (outputChoice == 2)
+    {
+        startIdx = numLines/2 - 5;
+        endIdx = numLines/2 + 5;
+    }
+    else if (outputChoice == 3)
+    {
+        startIdx = numLines - 10;
+        endIdx = numLines;
+    }
+  
+    for (int i = startIdx; i < endIdx; i++)
+    {
+        std::cout << data[i].getCountryName() << " " << data[i].getEpi2022() << " ";
+        std::cout << data[i].getEpi2020() << " " << data[i].getEpi10yr() << std::endl;
+    }
+
+  // Delete array to free memory
   delete[] data;
 
   return 0;
 }
 
-/**********************************************
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <iomanip>
-#include "country.h"
 
-
-int main() 
+Country* readCountryDataFromFile(const std::string& fileName, int& numLines) 
 {
-  // Declare Array
-  Country data[182];
+  // Read in File to count the number of lines
+  std::ifstream countFile(fileName);
+  std::string countLine;
+  while (std::getline(countFile, countLine)) {
+    numLines++;
+  }
+  countFile.close();
+
+  // Initialize a Dynamically allocated array
+  Country* data = new Country[numLines];
+
   // Declare Variables to hold in data
   std::string countryName;
   double epi2020, epi2022, epi10yr;
-  // Declare variable to keep track of count in while loop
+  // Declare variable to keep track of count for array in while loop
   int j = 0;
 
   // Read in File
-  std::ifstream file("data.csv");
+  std::ifstream file(fileName);
   std::string line;
   // Reads and discard the first line as it is not needed
   std::getline(file, line);
 
-  while (std::getline(file, line))
-  {
+  while (std::getline(file, line) && j < numLines) {
     std::stringstream ss(line);
     std::string field;
     data[j] = Country("N/A", epi2022, epi10yr, epi2020);
-    for (int i = 1; i <= 20; i++) 
-    {
+    for (int i = 1; i <= 20; i++) {
       //Checks Which number of values have been read in
-      std::getline(ss, field, ',');
-      if (field.empty()) 
-      {
+      //to determine when to set each value
+      std::getline(ss >> std::ws, field, ',');
+      if (field.empty()) {
         field = "0";
       }
-      if(i == 5)
-      {
-        std::string name = field;
+      if (i == 5) {
+        std::string name = field.substr(1, field.length() - 2); // remove quotation marks
         data[j].setCountryName(name);
-      }
-      else if(i == 15)
-      {
+      } else if (i == 15) {
         double newValue;
         std::istringstream iss(field);
         iss >> newValue;
         data[j].setEpi2022(newValue);
-      }
-      else if(i == 16)
-      {
+      } else if (i == 16) {
         double newValue;
         std::istringstream iss(field);
         iss >> newValue;
         data[j].setEpi2020(newValue);
-      }
-      else if(i == 17)
-      {
+      } else if (i == 17) {
         double newValue;
         std::istringstream iss(field);
         iss >> newValue;
         data[j].setEpi10year(newValue);
       }
-      std::cout << data[i].getCountryName() << std::endl;
     }
     j++;
   }
 
   file.close();
 
-  /*for(int i = 0; i < 182;i++)
-  {
-    std::cout << data[i].getCountryName() << " " << data[i].getEpi2022() << " ";
-    std::cout << data[i].getEpi2022() << " " << data[i].getEpi10yr() << std::endl;
-  }*/
-/*
-  return 0;
+  return data;
 }
 
-*/
-
-
-
-/*
-#include <iostream>
-#include <fstream>
-#include <string>
-
-using namespace std;
-
-int main() {
-    string filename = "filename.csv";
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cout << "Failed to open file: " << filename << endl;
-        return 1;
-    }
-
-    // skip first line
-    string line;
-    getline(file, line);
-
-    // read remaining lines
-    while (getline(file, line)) {
-        // process line here
-        cout << line << endl;
-    }
-
-    file.close();
-    return 0;
-}
-*/
-
-
-/*
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
-
-using namespace std;
-
-int main() {
-    ifstream file("data.csv"); // open the CSV file
-    if (!file.is_open()) {
-        cerr << "Failed to open file." << endl;
-        return 1;
-    }
-
-    vector<vector<string>> data; // 2D vector to store the CSV data
-    string line, field;
-    while (getline(file, line)) { // read each line of the file
-        vector<string> row; // vector to store each row of data
-        stringstream ss(line); // convert the line into a stringstream
-        while (getline(ss, field, ',')) { // split each line into fields
-            row.push_back(field); // add each field to the row vector
-        }
-        data.push_back(row); // add each row to the data vector
-    }
-
-    // create an array to store the specified fields
-    vector<vector<string>> result(data.size(), vector<string>(4));
-
-    for (int i = 1; i < data.size(); i++) { // start from 1 to skip the header row
-        // extract the specified fields and add them to the result array
-        result[i-1][0] = data[i][4]; // country name
-        result[i-1][1] = data[i][15]; // epi2020
-        result[i-1][2] = data[i][16]; // epi2022
-        result[i-1][3] = data[i][17]; // tenYrChange
-
-        // replace missing or corrupted values with 0
-        for (int j = 1; j < 4; j++) {
-            if (result[i-1][j] == "" || result[i-1][j] == "n/r") {
-                result[i-1][j] = "0";
-            }
-        }
-    }
-
-    // print the result array
-    for (int i = 0; i < result.size(); i++) {
-        for (int j = 0; j < result[i].size(); j++) {
-            cout << result[i][j] << "\t";
-        }
-        cout << endl;
-    }
-
-    return 0;
-}
-*/
-
-/*
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
-#include "country.h"
-
-int main()
-{
-  //Declare Array
-  Country data[50];
-  int i = 0;
-  
-  //Declare Variables To Set Into Array
-  double epi2020, epi2022, epi10year;
-  std::string countryName;
-  std::string line;
-  
-  //Read in CSV File
-  std::ifstream file("data.csv");
-
-  // Reads and discard the first line of headers
-  std::getline(file, line);
-
-  
-  while (std::getline(file, line)) 
-  {
-    std::stringstream ss(line);
-
-    std::string epi2020_str, epi2022_str, epi10year_str;
-
-    // Extract the countryName
-    for (int i = 0; i < 5; i++) 
-    {
-      std::getline(ss, countryName, ',');
-    }
-    //std::getline(ss, countryName, ',');
-    
-    // Extract the epi2022
-    for (int i = 6; i < 15; i++) 
-    {
-      std::getline(ss, epi2022_str, ',');
-    }
-    std::getline(ss, epi2022_str, ',');
-    //epi2022 = std::stod(epi2022_str);
-
-    // Extract the epi2020
-    for (int i = 15; i < 16; i++) 
-    {
-      std::getline(ss, epi2020_str, ',');
-    }
-    std::getline(ss, epi2020_str, ',');
-    //epi2020 = std::stod(epi2020_str);
-
-    // Extract the epi10year
-    for (int i = 16; i < 17; i++) 
-    {
-      std::getline(ss, epi10year_str, ',');
-    }
-    std::getline(ss, epi10year_str, ',');
-    //epi10year = std::stod(epi10year_str);
-
-    data[i] = Country(countryName, epi2022, epi10year, epi2020);
-
-    data[i].setCountryName(countryName);
-    data[i].setEpi2022(epi2022 = std::stod(epi2022_str));
-    data[i].setEpi2020(epi2020);
-    data[i].setEpi10year(epi10year = std::stod(epi10year_str));
-
-    //increments array
-    i++;
-  }
-
-  for(i = 0;i < 50;i++)
-  {
-    std::cout << data[i].getCountryName() << " " << data[i].getEpi10yr() << std::endl;
-  }
-  
-
-  
-  return 0;
-  
-}
-
-*/
