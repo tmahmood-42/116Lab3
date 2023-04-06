@@ -1,4 +1,4 @@
-# Current Status
-Progress of Lab 3 Code
+# Progress Update
 
-Check Version 0.3, for readable CSV file and adding to an array
+April 6, 2023 12:18 AM
+  -Version_0.3 Main File takes in CSV File and Adds to Array
